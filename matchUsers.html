@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Facebook Data Insights</title>
+</head>
+<body>  
+
+  <h1>Facebook Data Match</h1>
+  <p>
+    The common are
+  </p>
+  <div id="results"></div>  
+
+  <script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>  
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyB5BuTPSwcEHm2cS0xPWIWvSKx0jH07VEU",
+      authDomain: "data-mining-70fc9.firebaseapp.com",
+      databaseURL: "https://data-mining-70fc9.firebaseio.com",
+      storageBucket: "data-mining-70fc9.appspot.com",
+      messagingSenderId: "1010601239996"
+    };
+    firebase.initializeApp(config);
+  </script>
+  
+  <script type="text/javascript">
+    firebase.database().ref("/tecCommunity-counter").once("value").then(function(tecUsers) {
+      firebase.database().ref("/artistsCommunityFB").once("value").then(function(artistsUsers){
+        var tecu = tecUsers.val();
+        var artu = artistsUsers;      
+        for(var i in tecu){        
+          artu.forEach(function(oChildSnap){
+            var oUsers = oChildSnap.child("users");
+            if(oUsers.exists()){
+              var x = oUsers.val();
+              if(i in x){
+                //Users match
+                console.log(i);
+              }
+            }
+          });
+        }
+      });
+    });      
+  </script>
+
+</body>
+</html>

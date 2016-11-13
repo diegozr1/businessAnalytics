@@ -3,7 +3,7 @@ var config = {
  apiKey: "AIzaSyB5BuTPSwcEHm2cS0xPWIWvSKx0jH07VEU",
  authDomain: "data-mining-70fc9.firebaseapp.com",
  databaseURL: "https://data-mining-70fc9.firebaseio.com",
-	storageBucket: "data-mining-70fc9.appspot.com",
+ storageBucket: "data-mining-70fc9.appspot.com",
  messagingSenderId: "1010601239996"
 };
 
@@ -36,26 +36,39 @@ function retrieveCSV(date) {
 		date.format("YYYY-MM-DD") + "--" +
 		date.add(7, "days").format("YYYY-MM-DD") + "/download";
 	
-	var file = $.get("https://jsonp.afeld.me/?url=" + link,
-		function(data) {
-		data = data.split("\n");
+	var file = $.get("https://crossorigin.me/" + link, function(data) {
+		//data = data.split("\n");
 
-		for (var i = 1; i < (data.length - 1); i++) {
-			var artist = data[i].split(",")[2];
-			
-			if (artists[artist] == undefined) {
-				artists[artist] = 1;
+		var result = Papa.parse(data);   
+
+		//Remove header csv
+		result.data.splice(0, 1);
+
+		//Remove last trailing char
+		result.data.splice(result.data.length - 1, 1);
+
+		var oArtist = {};
+		var sArtist = "";
+		var sArtistName = "";
+		for (var i = 0; i < result.data.length; i++) {			
+			sArtistName = result.data[i][2];
+			sArtist = btoa(sArtistName);
+			sArtist = sArtist.replace(/\//g, "%");
+
+			if (artists[sArtist] == undefined) {
+				artists[sArtist] = {};
+				artists[sArtist].name = sArtistName;
+				artists[sArtist].count = 1;
 			} else {
-				artists[artist]++;
+				artists[sArtist].count += 1;
 			}
-/*
-			database.ref("artists").child(artist).set({
-				count: artists[artist]
-			})*/
-			console.log(data[i]);
-			console.log(artist + ": " + artists[artist]);
 		}
+
+		console.log(artists);
+
+		//database.ref("artists").update(artists);
 	});
+	
 }
 
-fetchArtists();
+//fetchArtists();
