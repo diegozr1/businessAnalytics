@@ -5,18 +5,10 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-/*
-var MongoClient = require('mongodb').MongoClient
-  , assert = require('assert');
-// Connection URL
-var url = 'mongodb://localhost:27017/data-mining';
-
-var db;
-*/
-
 var app = express();
 var router = express.Router();
 var index = require('./routes/index');
+var visualization = require('./routes/visualization');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -41,26 +33,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-/*
-var initDB = function(callback) {
-  MongoClient.connect(url, function(err, conn) {
-    assert.equal(null, err);
-    console.log("Connected successfully to server");
-    db = conn;
-    callback();
-  });
-}
+/* routes from index */
 
-router.use(function(req, res, next) {
-  console.log("Database connected");
-	req.db = db;
-	next();
-});
-*/
-
-router.route('/')
-      .get(index.index);
-      
 router.route('/getTopArtists')      
       .get(index.getTopArtists);
       
@@ -76,23 +50,22 @@ router.route('/getArtistsCommunity')
 router.route('/getArtistFBPage')
       .post(index.getArtistFBPage);
 
-router.route('/matchUsers')
-      .post(index.matchUsers);
+router.route('/matchTecVSArtistsCommunity')
+      .get(index.matchTecVSArtistsCommunity);
 
-router.route('/deleteNode')
-      .post(index.deleteNode);
+/* Routes from visualization */
+      
+router.route('/')
+      .get(visualization.index);
+      
+      
+router.route('/visualization')
+      .get(visualization.visualization); 
+      
+router.route('/view')
+      .get(visualization.view);
 
 app.use('/', router);
-
-/*
-var init = function() {
-  initDB(function() {
-    app.listen(process.env.PORT, function(){
-      console.log("Server running "+process.env.PORT)
-    });
-  })
-}
-*/
 
 var init = function(){
   app.listen(process.env.PORT, function(){

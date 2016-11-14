@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+          <p class="pull-right">Welcome to <%= title %></p>
+          <h1 class="warning"><%= title %></h1>
+          <hr>
+        <p>
+            <input type="checkbox" name="showSpotifyTop" onclick="showSpotifyTop(this)" />
+            Click to see a visualization for the most best artists according to Spotify
+        </p>
+        <div id="canvas-holder">
+          <canvas id="myChart" width="400" height="150"></canvas>
+        </div>
+        <h2>Top 10 from Spotify in Mexico </h2>
+        <hr>
+        <div id="canvas-holder-top">
+          <canvas id="Top10" width="400" height="150"></canvas>
+        </div>
+        <h2>Tec de Monterrey and Spotify fans in Facebook </h2>
+        <hr>
+        
+        
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+    <script>
+    
+    function showSpotifyTop(checkbox)
+    {
+        if (checkbox.checked)
+        {
+            
+            var data = <%- JSON.stringify(data) %>;
+            var ctx = document.getElementById("myChart");
+            var top = document.getElementById("Top10");
+            
+            var artistsTopAux   = showSpotifyTop10(data);
+            var artistsLabelAux = [];
+            var artistsCountAux = [];
+            
+            for(var i = 0; i < data.length; i++){
+                artistsLabelAux.push(data[i].name)
+                artistsCountAux.push(data[i].counter)
+            }
+    
+            var data = {
+                labels: artistsLabelAux,
+                datasets: [
+                    {
+                        data: artistsCountAux
+                    }]
+            };
+            
+            var all = new Chart(ctx, {
+               type: 'line',
+               data: data
+            });
+            
+            /* Top 10 Visualization */
+            
+            console.log(artistsTopAux)
+            var artistsTopLabelAux = [];
+            var artistsTopCountAux = [];
+            
+            for(var i = 0; i < artistsTopAux.length; i++){
+                artistsTopLabelAux.push(artistsTopAux[i].name)
+                console.log(artistsTopAux[i].name)
+                artistsTopCountAux.push(artistsTopAux[i].counter)
+            }
+            
+            var dataTop =  {
+                labels: artistsTopLabelAux,
+                datasets: [
+                    {
+                        data: artistsTopCountAux,
+                        backgroundColor: [
+                            "#FF6384",
+                            "#36A2EB",
+                            "#FF6384",
+                            "#FFCE56",
+                            "#36A2EB",
+                            "#FFCE56",
+                            "#FFCE56",
+                            "#36A2EB",
+                            "#FFCE56",
+                            "#FFCE56"
+                        ],
+                        hoverBackgroundColor: [
+                            "#FF6384",
+                            "#36A2EB",
+                            "#FFCE56"
+                        ]
+                    }]
+            };
+            
+            var top10 = new Chart(top, {
+               type: 'polarArea',
+               data: dataTop
+            });
+        }
+    }
+    
+    function showSpotifyTop10(artistsAux)
+    {
+        function compare(a,b) {
+          if (a.counter < b.counter)
+            return 1;
+          if (a.counter > b.counter)
+            return -1;
+          return 0;
+        }
+
+        artistsAux = artistsAux.sort(compare);
+        return artistsAux.slice(0,10);
+    }
+
+    </script>
+
+  </body>
+</html>
