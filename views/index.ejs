@@ -2,17 +2,51 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='https://bootswatch.com/paper/bootstrap.css' />
   </head>
   <body>
     <div class="container">
-      <h1><%= title %></h1>
-      <p>Welcome to <%= title %></p>
-      
       <div class="row">
-        <p>This is an analysis for the data extracted from Facebook using the Graph API <br>
-        and analysed using Node.js and MongoDB</p>
+        <h1> <i class="glyphicon glyphicon-education"></i> <%= title %></h1>
+        <p>Welcome to <%= title %></p>
+        <br><br><br>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <h4>About </h4>
+          </div>
+          <div class="panel-footer">
+            <p>This is an analysis for the data extracted from Facebook using the Graph API <br>
+          and analyzed using Node.js and MongoDB</p>
+            <p>Use the following buttons to <b>get started</b></p>
+          </div>
+        </div>
+        <br><br><br>
+        <table width="100%">
+          <td>
+            <a href="#" id="artistsSpotify" class="btn btn-large" onclick="call()">
+              <i class="glyphicon glyphicon-download-alt"></i>
+              Get the list of top Artists according to Spotify
+            </a>
+          </td>
+          <td align="right">
+            <a href="/visualization" class="btn btn-large btn-primary">
+              <i class="glyphicon glyphicon-signal"></i>
+              See the visualization for artists and their users
+            </a>
+          </td>
+        </table>
+        <hr>
       </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+      function call(){
+        $.getJSON(
+            "https://datamining-zdr00.c9users.io:8080/getTopArtists",
+            function(json) { console.log(json);  }
+          );
+          alert("Artistas obtenidos correctamente");
+      }
+    </script>
   </body>
 </html>

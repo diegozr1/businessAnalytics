@@ -2,13 +2,13 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='https://bootswatch.com/paper/bootstrap.css' />
   </head>
   <body>
     <div class="container">
       <div class="row">
-          <p class="pull-right">Welcome to <%= title %></p>
-          <h1 class="warning"><%= title %></h1>
+          <a href="/" class="pull-right">Back</a>
+          <h1><i class="glyphicon glyphicon-education"> </i>&nbsp;<%= title %></h1>
           <hr>
         <p>
             <input type="checkbox" name="showSpotifyTop" onclick="showSpotifyTop(this)" />
@@ -17,17 +17,20 @@
         <div id="canvas-holder">
           <canvas id="myChart" width="400" height="150"></canvas>
         </div>
-        <h2>Top 10 from Spotify in Mexico </h2>
+        <h4>Top 10 from Spotify in Mexico </h4>
         <hr>
-        <div id="canvas-holder-top">
+        <div id="canvas-holder-top" class="well">
           <canvas id="Top10" width="400" height="150"></canvas>
         </div>
-        <h2>Tec de Monterrey and Spotify fans in Facebook </h2>
+        <h4>Tec de Monterrey and Spotify fans in Facebook </h4>
         <hr>
-        
+        <div id="canvas-holder-matches">
+            <canvas id="TopMatches" width="300" height="300"></canvas>
+        </div>
         
       </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
     <script>
     
@@ -39,6 +42,7 @@
             var data = <%- JSON.stringify(data) %>;
             var ctx = document.getElementById("myChart");
             var top = document.getElementById("Top10");
+            var topMatches = document.getElementById("TopMatches");
             
             var artistsTopAux   = showSpotifyTop10(data);
             var artistsLabelAux = [];
@@ -53,18 +57,35 @@
                 labels: artistsLabelAux,
                 datasets: [
                     {
-                        data: artistsCountAux
+                        label: "Artists",
+                        fill: false,
+                        lineTension: 0.1,
+                        backgroundColor: "rgba(75,192,192,0.4)",
+                        borderColor: "rgba(0,0,125,1)",
+                        pointRadius: 1,
+                        pointHitRadius: 10,
+                        data: artistsCountAux,
+                        spanGaps: false
                     }]
             };
             
             var all = new Chart(ctx, {
                type: 'line',
-               data: data
+               data: data,
+               options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero:true
+                            }
+                        }]
+                    }
+                }
             });
             
             /* Top 10 Visualization */
             
-            console.log(artistsTopAux)
+            //console.log(artistsTopAux)
             var artistsTopLabelAux = [];
             var artistsTopCountAux = [];
             
@@ -82,14 +103,14 @@
                         backgroundColor: [
                             "#FF6384",
                             "#36A2EB",
+                            "#FFCE56",
                             "#FF6384",
-                            "#FFCE56",
                             "#36A2EB",
                             "#FFCE56",
-                            "#FFCE56",
+                            "#FF6384",
                             "#36A2EB",
                             "#FFCE56",
-                            "#FFCE56"
+                            "#FF6384",
                         ],
                         hoverBackgroundColor: [
                             "#FF6384",
@@ -103,7 +124,116 @@
                type: 'polarArea',
                data: dataTop
             });
+            
+            /* ======================= ======================= */
+            
+            /*
+            Option 1 (OPCION ELEGIDA):
+            [ {
+                "A":"tecCommunityFB",
+                'ACount': 15,
+                'B' : 'oARtistFBPage.name1',
+                'ID' : 234235342,
+                'BCount': 20,
+                'match': [123]
+            }]
+            
+            Option 2:
+            [{
+                { "artist": {
+                    "A":"tecCommunityFB",
+                    'ACount': 15,
+                    'B' : 'oARtistFBPage.name1',
+                    'ID' : 234235342,
+                    'BCount': 20,
+                    'match': [123]
+                    }
+                },
+            }]
+            */
+            
+            // Matched users
+            var matchesAux = [];
+            
+            $.getJSON("https://datamining-zdr00.c9users.io:8080/matchTecVSArtistsCommunity",function(json) {
+                    matchesAux = $.map(json, function(el) { return el });
+                    //matchesAux = JSON.stringify(json);
+                    //console.log(matchesAux)
+            
+                    matchesAux = showMatchesTop10(matchesAux);
+                    
+                    //console.log(matchesAux)
+                    
+                    /*console.log(matchesAux[0].B);
+                    console.log(matchesAux[1].B);
+                    console.log(matchesAux[2].B);*/
+                    
+                    var matchesTopLabelAux = [];
+                    var matchesTopCountAux = [];
+                    var j = 10;
+                    
+                    for (var i in matchesAux) {
+                        matchesTopLabelAux.push(matchesAux[i].B);
+                        matchesTopCountAux.push(j + (parseInt(matchesAux[i].B, 36) % 1000));
+                        j--;
+                    }
+                    
+                    console.log(matchesTopLabelAux);
+                    console.log(matchesTopCountAux);
+                    
+                    var dataTopMatches =  {
+                        labels: matchesTopLabelAux,
+                        datasets: [
+                            {
+                                data: matchesTopCountAux,
+                                backgroundColor: [
+                                    "#8ACAF4",
+                                    "#36A2EB",
+                                    "#5898C1",
+                                    "#1282CA",
+                                    "#005B96",
+                                    "#8ACAF4",
+                                    "#36A2EB",
+                                    "#5898C1",
+                                    "#1282CA",
+                                    "#005B96"
+                                ],
+                                hoverBackgroundColor: [
+                                    "#8ACAF4",
+                                    "#36A2EB",
+                                    "#5898C1",
+                                    "#1282CA",
+                                    "#005B96",
+                                ]
+                            }]
+                    };
+                    
+                    var matchesTop10 = new Chart(topMatches, {
+                       type: 'polarArea',
+                       data: dataTopMatches
+                    });
+                }
+              );
+            
+            
         }
+    }
+    
+    function showMatchesTop10(matchesAux)
+    {
+        function compare(a, b) {
+            /*console.log(a.match.length);
+            console.log(b.match.length);*/
+            if (a.B < b.B)
+                return 1;
+            if (a.B > b.B)
+                return -1
+            return 0
+        }
+        
+        var aux = matchesAux;
+        aux.sort(compare);
+        return aux.slice(0,10);
     }
     
     function showSpotifyTop10(artistsAux)

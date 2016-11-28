@@ -4,8 +4,8 @@ var moment = require('moment');
 var papaparse = require('papaparse');
 
 var mongoose = require('mongoose');
-//mongoose.connect('mongodb://localhost/data-mining');
-mongoose.connect('mongodb://diego:tec@ds151707.mlab.com:51707/data-mining');
+mongoose.connect('mongodb://localhost/data-mining');
+//mongoose.connect('mongodb://diego:tec@ds151707.mlab.com:51707/data-mining');
 // Models of mongo
 var ArtistSpotify = require('../models/artistSpotify');
 var ArtistCommunityFB = require('../models/artistCommunityFB');
@@ -15,7 +15,7 @@ var sFBToken = '1669573800000279|rU-PiJzm1B9fL8brn_F7b4aHsD8';
 var nSinceDate = 1470805200;
 var oEndpoints = {};
 oEndpoints.facebook = {
-  page: 'https://graph.facebook.com/v2.8/*pageName*?fields=fan_count,category,checkins,name,feed.since(' + nSinceDate + '){comments,reactions.limit(100)}&access_token=' + sFBToken,
+  page: 'https://graph.facebook.com/v2.8/*pageName*?fields=fan_count,category,checkins,name,feed.since(' + nSinceDate + '){comments,reactions}&access_token=' + sFBToken,
   searchPage: 'https://graph.facebook.com/v2.8/search?type=page&q=*artistName*&access_token=' + sFBToken  
 };
 oEndpoints.spotify = {
@@ -38,7 +38,7 @@ var getData = function(oCollection, oFilter, fCallback){
   oCollection.find(oFilter).toArray(fCallback);
 };
 
-//Working
+//Working with mongoDB
 var getCommunityHelper = function(sPageName, sRootNode, db, oExtra){
     if(!sPageName) return;
 
@@ -47,6 +47,12 @@ var getCommunityHelper = function(sPageName, sRootNode, db, oExtra){
     
     console.log(sURL);
     //console.log(sRootNode);
+    
+    //I think this could be the solution of timeout
+    var oCollection;
+    getCollection(sRootNode, function(oError, oCollectionLocal){
+      oCollection = oCollectionLocal;
+    });
     
     var oFeeds = [];
     var oPeople = [];
@@ -217,13 +223,15 @@ var getCommunityHelper = function(sPageName, sRootNode, db, oExtra){
         oQuery = { id: sUserID  };
         
         if(oExtra){
-          for(var sExtraAttr in oExtra){
+          oQuery["artistID"] = oExtra["artistID"];
+          /*for(var sExtraAttr in oExtra){
             oQuery[sExtraAttr] = oExtra[sExtraAttr];
-          }
+          }*/
         }
         
         //sRootNode
-        getCollection(sRootNode, function(oError, oCollection){
+        //getCollection(sRootNode, function(oError, oCollection){
+          //Maybe we could use here findOneAndUpdate, insert anything, but return previous record, so get previous update counter and save it again, so we hold the last updated record
           getData(oCollection, oQuery, function(oErrorData, aData){
             if(!aData) return;
             
@@ -259,14 +267,14 @@ var getCommunityHelper = function(sPageName, sRootNode, db, oExtra){
               });
             }
           });
-        });
+        //});
       }
     };
 
     request(sURL, fSuccess);
 };
 
-//Working (POST)
+//Working with mongoDB (POST)
 //Payload
 /*
 {
@@ -335,6 +343,7 @@ exports.getTopArtists = function(req, res, next){
   		retrieveCSV(date);
   	}
   };
+  
   var retrieveCSV = function(date) {
     var sStartDate = date.format("YYYY-MM-DD");
     var sEndDate = date.add(7, "days").format("YYYY-MM-DD");
@@ -434,14 +443,12 @@ exports.getArtistsCommunity = function(req, res, next){
         console.log('getArtistFBPage of <' + sArtistName  + '>');
       };
       
-      /*
       request({
         url: sGetArtistFBPage,
         method: "POST",
         json: true,
         body: oArtist
       }, fCallback);
-      */
     }
   });
   
@@ -449,7 +456,7 @@ exports.getArtistsCommunity = function(req, res, next){
 };
 
 
-//Working (POST)
+//Working with mongoDB (POST)
 //Payload
 /*
   {
@@ -523,7 +530,8 @@ exports.getArtistFBPage = function(req,res,next){
             "pageName": sArtistFBID,
             "rootNode": sArtistsCommunityFB,
             "extra": {
-              artistID: sArtistID
+              artistID: sArtistID,
+              artistName: sArtistFBName
             }
           }
         }, fCallback);
@@ -534,58 +542,107 @@ exports.getArtistFBPage = function(req,res,next){
   res.send('NodeJS getCommunity of <' + sArtistName + '>');
 };
 
-//Working
-var matchUsers = function(oUsersA, oUsersB){
-  var oUsersMatched = {};
-  
-  //Go through each user in set A
-  for(var sUserIDA in oUsersA){
-    //Check if user its in set B
-    if(sUserIDA in oUsersB){
-      
-      //Save user matched
-      oUsersMatched[sUserIDA] = 1;
-    }
-  }
-  
-  return oUsersMatched;
-};
-
-//Working (GET)
+//Working with mongoDB (GET)
 exports.matchTecVSArtistsCommunity = function(req, res, next){
   var sTecCommunityNode = 'tecCommunityFB';
   var sArtistCommunityNode = 'artistsCommunityFB';
   
-  firebase.database().ref(sTecCommunityNode).once('value').then(function(oTecSnap){
-    firebase.database().ref(sArtistCommunityNode).once('value').then(function(oArtistsSnap){
-      var oTecUsers = oTecSnap.val();
+  getCollection(sTecCommunityNode, function(oError, oTecCollection){
+    getCollection(sArtistCommunityNode, function(oError, oArtistsCollection){
       var oUsersMatched = {};
       var oMatchs = {};
       
-      oArtistsSnap.forEach(function(oArtistChildSnap){
-        var sArtistKey = oArtistChildSnap.key;
-        var oArtistFBPage = oArtistChildSnap.child('page').val();
-        var oArtistUsers = oArtistChildSnap.child('users');
-        
-        //Check if artists has user's community
-        if(oArtistUsers.exists()){
-          oArtistUsers = oArtistUsers.val();
-          
-          //Match artist's community vs tec's community
-          oUsersMatched = matchUsers(oTecUsers, oArtistUsers);
-          
-          oMatchs[sArtistKey] = {
-            'A': 'tecCommunityFB',
-            'ACount': Object.keys(oTecUsers).length,
-            'B': oArtistFBPage.name,
-            'BCount': Object.keys(oArtistUsers).length,
-            'page': oArtistFBPage,
-            'match': oUsersMatched
-          };
-        }
-      });
+      var oTecQuery = {};
+      var oArtistsQuery = {};
       
-      res.send(oMatchs)
+      oTecCollection.aggregate([
+        { $match: {} },
+        {
+          $group: {
+            _id: '$id',
+            id: { $first: '$id' },
+            name: { $first: '$name' },
+            counter: { $sum: '$counter' }
+          }
+        }
+      ]);
+      
+     // console.log(oArtistsCollection);
+      
+      //Group tec user's counter
+      oTecCollection.aggregate([
+        { $match: {} },
+        {
+          $group: {
+            _id: '$id',
+            id: { $first: '$id' },
+            name: { $first: '$name' },
+            counter: { $sum: '$counter' }
+          }
+        }
+      ]).toArray(function(err, aTecUsers){
+        if(err) throw err;
+        oArtistsCollection.aggregate([
+          { $match: {} },
+          {
+            $group: {
+              _id: { id: '$id', artistID: '$artistID' },
+              id: { $first: '$id' },
+              artistID: { $first: '$artistID' },
+              artistName: { $first: '$artistName' },
+              name: { $first: '$name' },
+              counter: { $sum: '$counter' }
+            }
+          }
+        ]).toArray(function(oErrorArtists, aArtistsUsers){
+          var sArtistKey;
+          var sArtistName;
+          var nArtistUserFBID;
+          var nArtistUserCounter;
+          
+          var nTecUserFBID;
+          var nTecUserCounter;
+          
+          for(var i in aArtistsUsers){
+            sArtistKey = aArtistsUsers[i].artistID;
+            sArtistName = aArtistsUsers[i].artistName;
+            nArtistUserFBID = aArtistsUsers[i].id;
+            nArtistUserCounter = aArtistsUsers[i].counter;
+            
+            if(!oUsersMatched[sArtistKey]){
+              console.log("ACount "+ aTecUsers.length)
+              console.log("BCount "+ aArtistsUsers.length);
+              oUsersMatched[sArtistKey] = {
+                'A': sTecCommunityNode,
+                'ACount': aTecUsers.length,
+                'B' : sArtistName,
+                'ID' : sArtistKey,
+                'BCount': aArtistsUsers.length,
+                'match': {}
+              };
+            }
+            
+            for(var j in aTecUsers){
+              nTecUserFBID = aTecUsers[j].id;
+              nTecUserCounter = aTecUsers[j].counter;
+              
+              if(nArtistUserFBID === nTecUserFBID){
+                //Match found
+                if(!oUsersMatched[sArtistKey].match[nArtistUserFBID]){
+                  oUsersMatched[sArtistKey].match[nArtistUserFBID] = true;
+                }
+              }
+            }
+          }
+          //console.log(oUsersMatched);
+          
+          for(var sArtistKey in oUsersMatched){
+            oUsersMatched[sArtistKey].match = Object.keys(oUsersMatched[sArtistKey].match);
+          }
+          
+          res.json(oUsersMatched);
+        });
+      });
     });
   });
 };

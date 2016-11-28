@@ -58,12 +58,9 @@ router.route('/matchTecVSArtistsCommunity')
 router.route('/')
       .get(visualization.index);
       
-      
 router.route('/visualization')
       .get(visualization.visualization); 
       
-router.route('/view')
-      .get(visualization.view);
 
 app.use('/', router);
 
